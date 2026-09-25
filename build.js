@@ -2,15 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const tscPath = path.resolve(__dirname, '../../qoolla/tutor-web/node_modules/.bin/tsc');
+const tscPath = require.resolve('typescript/bin/tsc');
 const projectDir = __dirname;
 
 try {
   // 1. Build TypeScript definitions and CommonJS
-  execSync(`"${tscPath}" -p "${projectDir}/tsconfig.json"`, { stdio: 'inherit' });
+  execSync(`node "${tscPath}" -p "${projectDir}/tsconfig.json"`, { stdio: 'inherit' });
   
   // 2. Build ESM modules
-  execSync(`"${tscPath}" -p "${projectDir}/tsconfig.json" --module ES2020 --outDir "${projectDir}/dist/esm"`, { stdio: 'inherit' });
+  execSync(`node "${tscPath}" -p "${projectDir}/tsconfig.json" --module ES2020 --outDir "${projectDir}/dist/esm"`, { stdio: 'inherit' });
 
   // 3. Process ESM files (.mjs with correct relative import specifiers)
   const esmDir = path.join(projectDir, 'dist/esm');

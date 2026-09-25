@@ -2,6 +2,10 @@
   "name": "@qoolla/script-parser",
   "version": "1.0.0",
   "description": "Unified release script parser and utilities for Qoolla ecosystem",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/arasu007-naver/qoolla-package.git"
+  },
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -18,5 +22,8 @@
     "parser"
   ],
   "author": "jaesung phi",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
 }

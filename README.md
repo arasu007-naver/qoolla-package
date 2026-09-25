@@ -117,15 +117,36 @@ const targetState = await runAt(
   "main", // 'prologue' | 'main' | 'epilogue'
   callbacks
 );
-3. 패키지 의존성 추가 방법 (선택 사항)
-프로젝트의 
+3. 패키지 의존성 추가 방법 (GitHub 직접 참조)
 
-package.json
-에 직접 로컬 패키지 의존성을 명시하려면 아래와 같이 등록할 수 있습니다:
+로컬 상대경로(`file:../...`) 대신 GitHub 리포지토리를 직접 참조합니다.
+패키지 이름(key)이 동일하므로 **기존 import 문은 변경할 필요가 없습니다.**
 
-json
+각 프로젝트의 `package.json`:
+
+```json
 {
   "dependencies": {
-    "@qoolla/script-parser": "file:../packages/script-parser"
+    "@qoolla/script-parser": "github:arasu007-naver/qoolla-package#v1.0.0"
   }
 }
+```
+
+설치:
+
+```bash
+npm install
+```
+
+주의사항
+
+- **반드시 태그(`#v1.0.0`)로 고정하세요.** `#main`으로 두면 소비 프로젝트가 언제
+  업데이트될지 예측할 수 없고, 갱신하려면 `npm update @qoolla/script-parser`를
+  별도로 실행해야 합니다.
+- `dist/`가 리포지토리에 커밋되어 있으므로 설치 시 별도 빌드가 필요 없습니다.
+  따라서 `package.json`에 `prepare` 스크립트를 추가하면 안 됩니다
+  (`build.js`는 외부 경로의 `tsc`에 의존하므로 소비자 환경에서 실패합니다).
+- 리포지토리가 public이라 SSH 키 없이도 설치됩니다. `package-lock.json`에
+  `git+ssh://`로 기록되지만 npm이 HTTPS 타르볼로 폴백하므로 CI에서도 동작합니다.
+- 버전 갱신 절차: `src` 수정 → `npm run build` → `dist` 포함 커밋 →
+  `package.json`의 `version` 올림 → 새 태그 푸시 → 소비 프로젝트의 `#vX.Y.Z` 수정.

@@ -418,6 +418,9 @@ export async function scriptMaker(
     const urlWithTs = `${scriptUrl}${separator}ts=${Date.now()}`;
     if (typeof fetch === "function") {
       const res = await fetch(urlWithTs);
+      if (!res.ok) {
+        throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
+      }
       const data = await res.json();
       return parseDocument(data);
     }
