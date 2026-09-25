@@ -1,0 +1,22 @@
+{
+  "name": "@qoolla/script-parser",
+  "version": "1.0.0",
+  "description": "Unified release script parser and utilities for Qoolla ecosystem",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src"
+  ],
+  "scripts": {
+    "build": "node build.js"
+  },
+  "keywords": [
+    "qoolla",
+    "script",
+    "parser"
+  ],
+  "author": "jaesung phi",
+  "license": "ISC"
+}
