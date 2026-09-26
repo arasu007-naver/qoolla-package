@@ -250,8 +250,20 @@ async function handleLiveClassMessage(data, context, options) {
             }
             break;
         }
+        case "synch": {
+            if (guide.objects && context.canvas?.syncCanvasObjects) {
+                context.canvas.syncCanvasObjects(guide.objects);
+            }
+            if (guide.step || guide.mode) {
+                context.setCutSequence?.((guide.step || guide.mode));
+            }
+            context.setLastGuide?.(guide);
+            if (context.playToPoint) {
+                await context.playToPoint(guide);
+            }
+            break;
+        }
         case "step":
-        case "synch":
         case "refresh":
         default: {
             if (context.playToPoint) {

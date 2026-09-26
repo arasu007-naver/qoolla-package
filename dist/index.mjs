@@ -1,5 +1,6 @@
 export * from "./player.mjs";
 export * from "./message-handler.mjs";
+export * from "./subjects.mjs";
 /**
  * 안전한 JSON 파서. 문자열이면 JSON.parse 시도, 이미 객체이면 그대로 반환, 실패 시 fallback 반환.
  */

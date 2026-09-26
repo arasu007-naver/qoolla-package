@@ -79,6 +79,7 @@ export interface LiveClassCanvasRef {
   withoutFurtherAdo?: () => void;
   removeFlyingObjs?: () => void;
   importObjectFromClipboard?: (obj: unknown) => void;
+  syncCanvasObjects?: (objects: unknown[], removeExtra?: boolean) => void;
   takeSnapShotOfCanvas?: () => Promise<string | void> | string | void;
   [key: string]: unknown;
 }
@@ -332,8 +333,21 @@ export async function handleLiveClassMessage(
       break;
     }
 
+    case "synch": {
+      if (guide.objects && context.canvas?.syncCanvasObjects) {
+        context.canvas.syncCanvasObjects(guide.objects);
+      }
+      if (guide.step || guide.mode) {
+        context.setCutSequence?.((guide.step || guide.mode) as CutStep);
+      }
+      context.setLastGuide?.(guide);
+      if (context.playToPoint) {
+        await context.playToPoint(guide);
+      }
+      break;
+    }
+
     case "step":
-    case "synch":
     case "refresh":
     default: {
       if (context.playToPoint) {

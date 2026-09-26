@@ -34,6 +34,8 @@ export interface ScriptPlayerCallbacks<T = RawCut> {
   hasEpilogue?: (leaderId: string | null, cut?: T) => boolean;
   /** 커튼/배경 지속성 객체 복원 핸들러 */
   runCurtains?: (cutIdx: number) => Promise<void> | void;
+  /** 동기화 객체 수신 시 비파괴적 추가 핸들러 */
+  syncCanvasObjects?: (objects: unknown[]) => Promise<void> | void;
   /** 커서 및 단계 상태 변경 리스너 */
   onStateChange?: (state: PlayerState) => void;
   /** 슬립 함수 (기본값: defaultSleep) */
@@ -159,6 +161,10 @@ export async function fastforward<T = RawCut>(
     }
   }
 
+  if (targetGuide.objects && Array.isArray(targetGuide.objects) && callbacks.syncCanvasObjects) {
+    await callbacks.syncCanvasObjects(targetGuide.objects);
+  }
+
   const finalState: PlayerState = {
     currentIdx: endIdx,
     cutSequence: targetStep,
@@ -197,10 +203,22 @@ export async function playToPoint<T = RawCut>(
   const endIdx = targetGuide.studyIdx ?? 0;
   const targetStep = (targetGuide.step || targetGuide.mode || "main") as CutStep;
 
+  if (targetGuide.action === "synch") {
+    if (targetGuide.objects && Array.isArray(targetGuide.objects) && callbacks.syncCanvasObjects) {
+      await callbacks.syncCanvasObjects(targetGuide.objects);
+    }
+    const synchState: PlayerState = {
+      currentIdx: targetGuide.studyIdx ?? endIdx,
+      cutSequence: targetStep,
+      lastGuide: targetGuide,
+    };
+    callbacks.onStateChange?.(synchState);
+    return synchState;
+  }
+
   if (
     endIdx < lastPointIdx ||
     targetGuide.action === "refresh" ||
-    targetGuide.action === "synch" ||
     targetGuide.sync === true
   ) {
     return fastforward(cutContents, targetGuide, callbacks);

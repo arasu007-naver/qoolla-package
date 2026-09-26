@@ -23,6 +23,7 @@ exports.scriptMaker = scriptMaker;
 exports.liveClassScriptMaker = liveClassScriptMaker;
 __exportStar(require("./player"), exports);
 __exportStar(require("./message-handler"), exports);
+__exportStar(require("./subjects"), exports);
 /**
  * 안전한 JSON 파서. 문자열이면 JSON.parse 시도, 이미 객체이면 그대로 반환, 실패 시 fallback 반환.
  */

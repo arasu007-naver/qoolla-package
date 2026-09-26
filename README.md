@@ -117,6 +117,46 @@ const targetState = await runAt(
   "main", // 'prologue' | 'main' | 'epilogue'
   callbacks
 );
+
+⑤ Go3 Math 수학 과목 및 챕터 목록 API (MATH_SUBJECTS, getMathSubjects, getMathChapters 등)
+Go3 Math Service (Qoolla)에서 제공하는 과목, 챕터, 수능 계열 정보를 표준화하여 제공합니다.
+
+typescript
+import {
+  MATH_SUBJECTS,
+  MATH_AGENDA,
+  MATH_CHAPTERS,
+  MATH_MAJORS,
+  getMathSubjects,
+  getMathSubjectById,
+  getMathSubjectByValue,
+  getMathSubject,
+  getMathSubjectLabel,
+  getMathChapters,
+  getMathChapterById,
+  getMathMajors,
+} from "@qoolla/script-parser";
+
+// 1. 전체 과목 목록 조회
+const subjects = getMathSubjects();
+// [ { id: 11, value: "BASIC_MATH", label: "기초 수학", chapters: [...] }, ... ]
+
+// 2. ID 또는 Value로 과목 조회
+const math1 = getMathSubjectById(2);
+const calculus = getMathSubjectByValue("CALCULUS");
+const subject = getMathSubject("HIGHSCHOOL_MATH_BASE_A");
+
+// 3. 과목 한글명(라벨) 가져오기
+const label = getMathSubjectLabel("HIGHSCHOOL_MATH2"); // "수학 2"
+
+// 4. 과목별 챕터 목록 조회 (파라미터 생략 시 전체 챕터 목록 반환)
+const chapters = getMathChapters("STATISTICS"); // 확률과 통계 챕터 목록
+
+// 5. 챕터 ID로 조회
+const chapter = getMathChapterById(21); // { id: 21, title: "순열과 조합(II)", ... }
+
+// 6. 수능 계열/선택과목 목록 조회
+const majors = getMathMajors(); // [ { value: "A", label: "문과" }, ... ]
 3. 패키지 의존성 추가 방법 (GitHub 직접 참조)
 
 로컬 상대경로(`file:../...`) 대신 GitHub 리포지토리를 직접 참조합니다.

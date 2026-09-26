@@ -21,6 +21,7 @@ export interface LiveClassCanvasRef {
     withoutFurtherAdo?: () => void;
     removeFlyingObjs?: () => void;
     importObjectFromClipboard?: (obj: unknown) => void;
+    syncCanvasObjects?: (objects: unknown[], removeExtra?: boolean) => void;
     takeSnapShotOfCanvas?: () => Promise<string | void> | string | void;
     [key: string]: unknown;
 }

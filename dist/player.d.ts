@@ -39,6 +39,8 @@ export interface ScriptPlayerCallbacks<T = RawCut> {
     hasEpilogue?: (leaderId: string | null, cut?: T) => boolean;
     /** 커튼/배경 지속성 객체 복원 핸들러 */
     runCurtains?: (cutIdx: number) => Promise<void> | void;
+    /** 동기화 객체 수신 시 비파괴적 추가 핸들러 */
+    syncCanvasObjects?: (objects: unknown[]) => Promise<void> | void;
     /** 커서 및 단계 상태 변경 리스너 */
     onStateChange?: (state: PlayerState) => void;
     /** 슬립 함수 (기본값: defaultSleep) */

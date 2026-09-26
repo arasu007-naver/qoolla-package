@@ -2,6 +2,7 @@ import type { RawCut, RawGuideScript, GuideScript } from "./types";
 export type * from "./types";
 export * from "./player";
 export * from "./message-handler";
+export * from "./subjects";
 /**
  * 안전한 JSON 파서. 문자열이면 JSON.parse 시도, 이미 객체이면 그대로 반환, 실패 시 fallback 반환.
  */

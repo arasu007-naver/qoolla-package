@@ -116,6 +116,9 @@ async function fastforward(cutContents, targetGuide, callbacks) {
             await sleep(600);
         }
     }
+    if (targetGuide.objects && Array.isArray(targetGuide.objects) && callbacks.syncCanvasObjects) {
+        await callbacks.syncCanvasObjects(targetGuide.objects);
+    }
     const finalState = {
         currentIdx: endIdx,
         cutSequence: targetStep,
@@ -145,9 +148,20 @@ async function playToPoint(cutContents, targetGuide, lastGuide, callbacks) {
     const lastPointIdx = lastGuide ? (lastGuide.studyIdx ?? 0) : 0;
     const endIdx = targetGuide.studyIdx ?? 0;
     const targetStep = (targetGuide.step || targetGuide.mode || "main");
+    if (targetGuide.action === "synch") {
+        if (targetGuide.objects && Array.isArray(targetGuide.objects) && callbacks.syncCanvasObjects) {
+            await callbacks.syncCanvasObjects(targetGuide.objects);
+        }
+        const synchState = {
+            currentIdx: targetGuide.studyIdx ?? endIdx,
+            cutSequence: targetStep,
+            lastGuide: targetGuide,
+        };
+        callbacks.onStateChange?.(synchState);
+        return synchState;
+    }
     if (endIdx < lastPointIdx ||
         targetGuide.action === "refresh" ||
-        targetGuide.action === "synch" ||
         targetGuide.sync === true) {
         return fastforward(cutContents, targetGuide, callbacks);
     }
