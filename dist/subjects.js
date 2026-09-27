@@ -3,7 +3,7 @@
  * Go3 Math Service (Qoolla) 수학 과목 및 챕터/커리큘럼 정의
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.HIGHSCHOOL_MATH_SUBJECTS_URL = exports.MATH_MAJORS = exports.MATH_CHAPTERS = exports.MATH_AGENDA = exports.MATH_SUBJECTS = void 0;
+exports.CONCEPTS_IN_CHAPTER_URL_PREFIX = exports.CHAPTERS_OF_SUBJECT_URL_PREFIX = exports.HIGHSCHOOL_MATH_SUBJECTS_URL = exports.MATH_MAJORS = exports.MATH_CHAPTERS = exports.MATH_AGENDA = exports.MATH_SUBJECTS = void 0;
 exports.getMathSubjects = getMathSubjects;
 exports.getMathSubjectById = getMathSubjectById;
 exports.getMathSubjectByValue = getMathSubjectByValue;
@@ -15,6 +15,8 @@ exports.getMathMajors = getMathMajors;
 exports.isUnsetCurriculumType = isUnsetCurriculumType;
 exports.resolveSubjectCurriculumType = resolveSubjectCurriculumType;
 exports.getMathSubjectsByCurriculum = getMathSubjectsByCurriculum;
+exports.getChaptersOfSubject = getChaptersOfSubject;
+exports.getConceptsInChapter = getConceptsInChapter;
 /**
  * Go3 Math Service (Qoolla) 전체 과목 및 하위 챕터 목록
  */
@@ -309,4 +311,73 @@ async function getMathSubjectsByCurriculum(curriculumType, options) {
         }
         return subjType === targetCurriculum;
     });
+}
+/* ─────────────────────────────────────────────
+ * 과목별 단원(챕터) 및 단원별 개념 조회 (서버 조회)
+ * ───────────────────────────────────────────── */
+exports.CHAPTERS_OF_SUBJECT_URL_PREFIX = "https://api-v2.qoolla.com/public/getChaptersOfMathSubject/";
+exports.CONCEPTS_IN_CHAPTER_URL_PREFIX = "https://api-v2.qoolla.com/public/getConceptsInChapter/";
+/**
+ * 특정 수학 과목(subjectId)에 속한 챕터(단원) 목록을 서버로부터 비동기 조회합니다.
+ *
+ * @param subjectId 수학 과목 ID
+ * @param options URL 재정의 또는 커스텀 fetch 함수
+ * @returns MathSubjectChapter[] 챕터 목록
+ */
+async function getChaptersOfSubject(subjectId, options) {
+    const url = options?.url ?? `${exports.CHAPTERS_OF_SUBJECT_URL_PREFIX}${subjectId}`;
+    let data;
+    if (options?.fetchFn) {
+        data = await options.fetchFn(url);
+    }
+    else if (typeof fetch === "function") {
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
+        }
+        data = await res.json();
+    }
+    else {
+        throw new Error("fetch 함수가 제공되지 않았습니다.");
+    }
+    const raw = data;
+    if (Array.isArray(raw))
+        return raw;
+    if (Array.isArray(raw?.result))
+        return raw.result;
+    if (Array.isArray(raw?.data?.result))
+        return raw.data.result;
+    return [];
+}
+/**
+ * 특정 챕터(chapterId)에 속한 개념 목록을 서버로부터 비동기 조회합니다.
+ *
+ * @param chapterId 챕터(단원) ID
+ * @param options URL 재정의 또는 커스텀 fetch 함수
+ * @returns MathConcept[] 개념 목록
+ */
+async function getConceptsInChapter(chapterId, options) {
+    const url = options?.url ?? `${exports.CONCEPTS_IN_CHAPTER_URL_PREFIX}${chapterId}`;
+    let data;
+    if (options?.fetchFn) {
+        data = await options.fetchFn(url);
+    }
+    else if (typeof fetch === "function") {
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
+        }
+        data = await res.json();
+    }
+    else {
+        throw new Error("fetch 함수가 제공되지 않았습니다.");
+    }
+    const raw = data;
+    if (Array.isArray(raw))
+        return raw;
+    if (Array.isArray(raw?.result))
+        return raw.result;
+    if (Array.isArray(raw?.data?.result))
+        return raw.data.result;
+    return [];
 }

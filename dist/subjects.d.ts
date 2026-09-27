@@ -135,3 +135,44 @@ export declare function resolveSubjectCurriculumType(subj: HighSchoolMathSubject
  * const legacy = await getMathSubjectsByCurriculum();
  */
 export declare function getMathSubjectsByCurriculum(curriculumType?: string | null, options?: GetMathSubjectsByCurriculumOptions): Promise<HighSchoolMathSubject[]>;
+export declare const CHAPTERS_OF_SUBJECT_URL_PREFIX = "https://api-v2.qoolla.com/public/getChaptersOfMathSubject/";
+export declare const CONCEPTS_IN_CHAPTER_URL_PREFIX = "https://api-v2.qoolla.com/public/getConceptsInChapter/";
+export interface MathSubjectChapter {
+    id: number;
+    chapterName: string;
+    subjectId: number;
+}
+export interface MathConcept {
+    id: number;
+    rawTitle: string;
+    rawStatement?: string;
+    imgPath?: string;
+}
+export interface GetChaptersOfSubjectOptions {
+    /** 기본 엔드포인트 URL 또는 URL prefix를 변경합니다. */
+    url?: string;
+    /** fetch 를 쓸 수 없는 환경에서 주입하는 조회 함수. */
+    fetchFn?: (url: string) => Promise<unknown>;
+}
+export interface GetConceptsInChapterOptions {
+    /** 기본 엔드포인트 URL 또는 URL prefix를 변경합니다. */
+    url?: string;
+    /** fetch 를 쓸 수 없는 환경에서 주입하는 조회 함수. */
+    fetchFn?: (url: string) => Promise<unknown>;
+}
+/**
+ * 특정 수학 과목(subjectId)에 속한 챕터(단원) 목록을 서버로부터 비동기 조회합니다.
+ *
+ * @param subjectId 수학 과목 ID
+ * @param options URL 재정의 또는 커스텀 fetch 함수
+ * @returns MathSubjectChapter[] 챕터 목록
+ */
+export declare function getChaptersOfSubject(subjectId: number, options?: GetChaptersOfSubjectOptions): Promise<MathSubjectChapter[]>;
+/**
+ * 특정 챕터(chapterId)에 속한 개념 목록을 서버로부터 비동기 조회합니다.
+ *
+ * @param chapterId 챕터(단원) ID
+ * @param options URL 재정의 또는 커스텀 fetch 함수
+ * @returns MathConcept[] 개념 목록
+ */
+export declare function getConceptsInChapter(chapterId: number, options?: GetConceptsInChapterOptions): Promise<MathConcept[]>;
