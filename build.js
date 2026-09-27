@@ -2,15 +2,33 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const tscPath = require.resolve('typescript/bin/tsc');
+function getTscCommand() {
+  const candidates = [
+    path.join(__dirname, 'node_modules/typescript/bin/tsc'),
+    path.join(__dirname, '../../student-ai-support/node_modules/typescript/bin/tsc'),
+    path.join(__dirname, '../../qoolla-student-app/node_modules/typescript/bin/tsc'),
+    path.join(__dirname, '../../go3math-class-nextjs-trpc-web/node_modules/typescript/bin/tsc'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return `node "${c}"`;
+  }
+  try {
+    const p = require.resolve('typescript/bin/tsc');
+    return `node "${p}"`;
+  } catch (e) {
+    return 'npx --yes typescript tsc';
+  }
+}
+
+const tscCmd = getTscCommand();
 const projectDir = __dirname;
 
 try {
   // 1. Build TypeScript definitions and CommonJS
-  execSync(`node "${tscPath}" -p "${projectDir}/tsconfig.json"`, { stdio: 'inherit' });
+  execSync(`${tscCmd} -p "${projectDir}/tsconfig.json"`, { stdio: 'inherit' });
   
   // 2. Build ESM modules
-  execSync(`node "${tscPath}" -p "${projectDir}/tsconfig.json" --module ES2020 --outDir "${projectDir}/dist/esm"`, { stdio: 'inherit' });
+  execSync(`${tscCmd} -p "${projectDir}/tsconfig.json" --module ES2020 --outDir "${projectDir}/dist/esm"`, { stdio: 'inherit' });
 
   // 3. Process ESM files (.mjs with correct relative import specifiers)
   const esmDir = path.join(projectDir, 'dist/esm');

@@ -314,8 +314,25 @@ export interface GetMathSubjectsByCurriculumOptions {
 /**
  * curriculumType 미지정을 뜻하는 값. 레거시 데이터에 null, 문자열 "null", 빈 문자열이 섞여 있습니다.
  */
-function isUnsetCurriculumType(curriculumType?: string | null): boolean {
+export function isUnsetCurriculumType(curriculumType?: string | null): boolean {
   return curriculumType == null || curriculumType === "null" || curriculumType === "";
+}
+
+/**
+ * 과목의 curriculumType을 결정합니다.
+ * 서버 응답에 curriculumType 필드가 있으면 해당 값을 사용하고,
+ * 서버에 curriculumType 필드가 누락되어 있는 경우(서버 재배포 전) 과목 ID 범위를 기반으로 보정합니다:
+ * - ID 15 ~ 33: 2022 개정 ("2022")
+ * - ID 34 ~ 48: 2015 개정 ("2015")
+ * - 그 외 (ID 1 ~ 14, 49, 50 등): 레거시/미지정 (null)
+ */
+export function resolveSubjectCurriculumType(subj: HighSchoolMathSubject): string | null {
+  if (subj.curriculumType !== undefined && subj.curriculumType !== null && subj.curriculumType !== "") {
+    return subj.curriculumType;
+  }
+  if (subj.id >= 15 && subj.id <= 33) return "2022";
+  if (subj.id >= 34 && subj.id <= 48) return "2015";
+  return null;
 }
 
 /**
@@ -352,8 +369,22 @@ export async function getMathSubjectsByCurriculum(
   const result = (data as { result?: HighSchoolMathSubject[] } | null)?.result;
   const list: HighSchoolMathSubject[] = Array.isArray(result) ? result : [];
 
-  if (isUnsetCurriculumType(curriculumType)) {
-    return list.filter((subj) => isUnsetCurriculumType(subj.curriculumType));
-  }
-  return list.filter((subj) => subj.curriculumType === curriculumType);
+  const targetCurriculum = isUnsetCurriculumType(curriculumType) ? null : curriculumType;
+
+  return list
+    .map((subj) => {
+      const resolved = resolveSubjectCurriculumType(subj);
+      return {
+        ...subj,
+        curriculumType: subj.curriculumType ?? resolved,
+      };
+    })
+    .filter((subj) => {
+      const subjType = resolveSubjectCurriculumType(subj);
+      if (targetCurriculum === null) {
+        return isUnsetCurriculumType(subjType);
+      }
+      return subjType === targetCurriculum;
+    });
 }
+

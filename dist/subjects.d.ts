@@ -110,6 +110,19 @@ export interface GetMathSubjectsByCurriculumOptions {
     fetchFn?: (url: string) => Promise<unknown>;
 }
 /**
+ * curriculumType 미지정을 뜻하는 값. 레거시 데이터에 null, 문자열 "null", 빈 문자열이 섞여 있습니다.
+ */
+export declare function isUnsetCurriculumType(curriculumType?: string | null): boolean;
+/**
+ * 과목의 curriculumType을 결정합니다.
+ * 서버 응답에 curriculumType 필드가 있으면 해당 값을 사용하고,
+ * 서버에 curriculumType 필드가 누락되어 있는 경우(서버 재배포 전) 과목 ID 범위를 기반으로 보정합니다:
+ * - ID 15 ~ 33: 2022 개정 ("2022")
+ * - ID 34 ~ 48: 2015 개정 ("2015")
+ * - 그 외 (ID 1 ~ 14, 49, 50 등): 레거시/미지정 (null)
+ */
+export declare function resolveSubjectCurriculumType(subj: HighSchoolMathSubject): string | null;
+/**
  * 지정한 curriculumType(교육과정)에 속한 고등 수학 과목 목록을 반환합니다.
  *
  * 엔드포인트에서 전체 목록을 받아 로컬에서 걸러냅니다 (서버에 필터를 요청하지 않습니다).

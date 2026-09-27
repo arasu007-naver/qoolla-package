@@ -12,6 +12,8 @@ exports.getMathSubjectLabel = getMathSubjectLabel;
 exports.getMathChapters = getMathChapters;
 exports.getMathChapterById = getMathChapterById;
 exports.getMathMajors = getMathMajors;
+exports.isUnsetCurriculumType = isUnsetCurriculumType;
+exports.resolveSubjectCurriculumType = resolveSubjectCurriculumType;
 exports.getMathSubjectsByCurriculum = getMathSubjectsByCurriculum;
 /**
  * Go3 Math Service (Qoolla) 전체 과목 및 하위 챕터 목록
@@ -244,6 +246,24 @@ function isUnsetCurriculumType(curriculumType) {
     return curriculumType == null || curriculumType === "null" || curriculumType === "";
 }
 /**
+ * 과목의 curriculumType을 결정합니다.
+ * 서버 응답에 curriculumType 필드가 있으면 해당 값을 사용하고,
+ * 서버에 curriculumType 필드가 누락되어 있는 경우(서버 재배포 전) 과목 ID 범위를 기반으로 보정합니다:
+ * - ID 15 ~ 33: 2022 개정 ("2022")
+ * - ID 34 ~ 48: 2015 개정 ("2015")
+ * - 그 외 (ID 1 ~ 14, 49, 50 등): 레거시/미지정 (null)
+ */
+function resolveSubjectCurriculumType(subj) {
+    if (subj.curriculumType !== undefined && subj.curriculumType !== null && subj.curriculumType !== "") {
+        return subj.curriculumType;
+    }
+    if (subj.id >= 15 && subj.id <= 33)
+        return "2022";
+    if (subj.id >= 34 && subj.id <= 48)
+        return "2015";
+    return null;
+}
+/**
  * 지정한 curriculumType(교육과정)에 속한 고등 수학 과목 목록을 반환합니다.
  *
  * 엔드포인트에서 전체 목록을 받아 로컬에서 걸러냅니다 (서버에 필터를 요청하지 않습니다).
@@ -273,8 +293,20 @@ async function getMathSubjectsByCurriculum(curriculumType, options) {
     }
     const result = data?.result;
     const list = Array.isArray(result) ? result : [];
-    if (isUnsetCurriculumType(curriculumType)) {
-        return list.filter((subj) => isUnsetCurriculumType(subj.curriculumType));
-    }
-    return list.filter((subj) => subj.curriculumType === curriculumType);
+    const targetCurriculum = isUnsetCurriculumType(curriculumType) ? null : curriculumType;
+    return list
+        .map((subj) => {
+        const resolved = resolveSubjectCurriculumType(subj);
+        return {
+            ...subj,
+            curriculumType: subj.curriculumType ?? resolved,
+        };
+    })
+        .filter((subj) => {
+        const subjType = resolveSubjectCurriculumType(subj);
+        if (targetCurriculum === null) {
+            return isUnsetCurriculumType(subjType);
+        }
+        return subjType === targetCurriculum;
+    });
 }
