@@ -3,7 +3,7 @@
  * Go3 Math Service (Qoolla) 수학 과목 및 챕터/커리큘럼 정의
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.MATH_MAJORS = exports.MATH_CHAPTERS = exports.MATH_AGENDA = exports.MATH_SUBJECTS = void 0;
+exports.HIGHSCHOOL_MATH_SUBJECTS_URL = exports.MATH_MAJORS = exports.MATH_CHAPTERS = exports.MATH_AGENDA = exports.MATH_SUBJECTS = void 0;
 exports.getMathSubjects = getMathSubjects;
 exports.getMathSubjectById = getMathSubjectById;
 exports.getMathSubjectByValue = getMathSubjectByValue;
@@ -12,6 +12,7 @@ exports.getMathSubjectLabel = getMathSubjectLabel;
 exports.getMathChapters = getMathChapters;
 exports.getMathChapterById = getMathChapterById;
 exports.getMathMajors = getMathMajors;
+exports.getMathSubjectsByCurriculum = getMathSubjectsByCurriculum;
 /**
  * Go3 Math Service (Qoolla) 전체 과목 및 하위 챕터 목록
  */
@@ -225,4 +226,55 @@ function getMathChapterById(chapterId) {
  */
 function getMathMajors() {
     return exports.MATH_MAJORS;
+}
+/* ─────────────────────────────────────────────
+ * 교육과정별 고등 수학 과목 조회 (서버 조회)
+ *
+ * 위의 MATH_SUBJECTS 는 정적 정의이고, 아래는 서버가 관리하는
+ * 고등 수학 과목 목록을 curriculumType 으로 걸러 가져옵니다.
+ * ───────────────────────────────────────────── */
+/**
+ * 고등 수학 과목 목록 기본 엔드포인트.
+ */
+exports.HIGHSCHOOL_MATH_SUBJECTS_URL = "https://api-v2.qoolla.com/public/getAllHighSchoolMathSubjects";
+/**
+ * curriculumType 미지정을 뜻하는 값. 레거시 데이터에 null, 문자열 "null", 빈 문자열이 섞여 있습니다.
+ */
+function isUnsetCurriculumType(curriculumType) {
+    return curriculumType == null || curriculumType === "null" || curriculumType === "";
+}
+/**
+ * 지정한 curriculumType(교육과정)에 속한 고등 수학 과목 목록을 반환합니다.
+ *
+ * 엔드포인트에서 전체 목록을 받아 로컬에서 걸러냅니다 (서버에 필터를 요청하지 않습니다).
+ * curriculumType 은 개정 연도 문자열이며 "2022" 또는 "2015" 를 넘깁니다.
+ * 생략하거나 미지정 값(null, "null", "")을 넘기면 교육과정이 지정되지 않은
+ * 레거시 과목들을 반환합니다.
+ *
+ * @example
+ * const y2022 = await getMathSubjectsByCurriculum("2022");
+ * const legacy = await getMathSubjectsByCurriculum();
+ */
+async function getMathSubjectsByCurriculum(curriculumType, options) {
+    const url = options?.url ?? exports.HIGHSCHOOL_MATH_SUBJECTS_URL;
+    let data;
+    if (options?.fetchFn) {
+        data = await options.fetchFn(url);
+    }
+    else if (typeof fetch === "function") {
+        const res = await fetch(url);
+        if (!res.ok) {
+            throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
+        }
+        data = await res.json();
+    }
+    else {
+        throw new Error("fetch 함수가 제공되지 않았습니다.");
+    }
+    const result = data?.result;
+    const list = Array.isArray(result) ? result : [];
+    if (isUnsetCurriculumType(curriculumType)) {
+        return list.filter((subj) => isUnsetCurriculumType(subj.curriculumType));
+    }
+    return list.filter((subj) => subj.curriculumType === curriculumType);
 }
