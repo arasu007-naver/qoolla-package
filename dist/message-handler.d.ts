@@ -60,6 +60,10 @@ export interface LiveClassMessageContext {
     playToPoint?: (guide: GuideTarget) => Promise<void> | void;
     takeSnapShotOfCanvas?: () => Promise<string | void> | string | void;
     sleepFn?: (ms: number) => Promise<void>;
+    /** Flying object(adhoc) 수신 시 보관/상태 갱신 콜백 */
+    onAdHoc?: (fly: unknown) => void;
+    /** Flying object 전체 삭제 콜백 */
+    onRemoveAllAdHoc?: () => void;
 }
 export interface LiveMessageResult {
     handled: boolean;

@@ -148,6 +148,9 @@ async function handleLiveClassMessage(data, context, options) {
         return { handled: true, action: "magnifyArea", guide, isMobile };
     }
     // 6. 기타 액션 분기
+    if (guide.fly && guide.action !== "adhoc") {
+        context.onAdHoc?.(guide.fly);
+    }
     switch (guide.action) {
         case "property": {
             if (guide.lines) {
@@ -166,41 +169,44 @@ async function handleLiveClassMessage(data, context, options) {
             break;
         }
         case "adhoc": {
-            if (guide.fly && context.canvas) {
-                const flies = Array.isArray(guide.fly) ? guide.fly : [guide.fly];
-                for (const fly of flies) {
-                    if (fly.actionType === "MAGNIFY" ||
-                        (typeof fly.id === "string" && fly.id.startsWith("magnifier:"))) {
-                        let target = fly.obj;
-                        if (!target && fly.content) {
-                            try {
-                                target = typeof fly.content === "string" ? JSON.parse(fly.content) : fly.content;
+            if (guide.fly) {
+                context.onAdHoc?.(guide.fly);
+                if (context.canvas) {
+                    const flies = Array.isArray(guide.fly) ? guide.fly : [guide.fly];
+                    for (const fly of flies) {
+                        if (fly.actionType === "MAGNIFY" ||
+                            (typeof fly.id === "string" && fly.id.startsWith("magnifier:"))) {
+                            let target = fly.obj;
+                            if (!target && fly.content) {
+                                try {
+                                    target = typeof fly.content === "string" ? JSON.parse(fly.content) : fly.content;
+                                }
+                                catch { }
                             }
-                            catch { }
+                            if (target &&
+                                typeof target === "object" &&
+                                (target.left != null || target.width != null)) {
+                                await context.canvas.magnifyArea?.(target, { isMobile });
+                                await sleep(600);
+                            }
+                            else if (fly.objId || fly.id) {
+                                context.canvas.magnifyObj?.(fly.objId || fly.id);
+                                await sleep(600);
+                            }
                         }
-                        if (target &&
-                            typeof target === "object" &&
-                            (target.left != null || target.width != null)) {
-                            await context.canvas.magnifyArea?.(target, { isMobile });
-                            await sleep(600);
-                        }
-                        else if (fly.objId || fly.id) {
-                            context.canvas.magnifyObj?.(fly.objId || fly.id);
-                            await sleep(600);
+                        else {
+                            context.canvas.removeObjectWithId?.(fly.id);
                         }
                     }
-                    else {
-                        context.canvas.removeObjectWithId?.(fly.id);
-                    }
-                }
-                for (const fly of flies) {
-                    if (fly.actionType !== "MAGNIFY" &&
-                        !(typeof fly.id === "string" && fly.id.startsWith("magnifier:"))) {
-                        context.canvas.importObjectFromClipboard?.({
-                            ...fly,
-                            support: isMobile ? "qoolla-mobile" : "qoolla",
-                        });
-                        await sleep(isMobile ? 800 : 720);
+                    for (const fly of flies) {
+                        if (fly.actionType !== "MAGNIFY" &&
+                            !(typeof fly.id === "string" && fly.id.startsWith("magnifier:"))) {
+                            context.canvas.importObjectFromClipboard?.({
+                                ...fly,
+                                support: isMobile ? "qoolla-mobile" : "qoolla",
+                            });
+                            await sleep(isMobile ? 800 : 720);
+                        }
                     }
                 }
             }
@@ -208,6 +214,7 @@ async function handleLiveClassMessage(data, context, options) {
         }
         case "remove_all_adhoc": {
             context.canvas?.removeFlyingObjs?.();
+            context.onRemoveAllAdHoc?.();
             break;
         }
         case "remove": {

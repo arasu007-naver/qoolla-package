@@ -114,6 +114,10 @@ export interface LiveClassMessageContext {
   playToPoint?: (guide: GuideTarget) => Promise<void> | void;
   takeSnapShotOfCanvas?: () => Promise<string | void> | string | void;
   sleepFn?: (ms: number) => Promise<void>;
+  /** Flying object(adhoc) 수신 시 보관/상태 갱신 콜백 */
+  onAdHoc?: (fly: unknown) => void;
+  /** Flying object 전체 삭제 콜백 */
+  onRemoveAllAdHoc?: () => void;
 }
 
 export interface LiveMessageResult {
@@ -222,6 +226,10 @@ export async function handleLiveClassMessage(
   }
 
   // 6. 기타 액션 분기
+  if (guide.fly && guide.action !== "adhoc") {
+    context.onAdHoc?.(guide.fly);
+  }
+
   switch (guide.action) {
     case "property": {
       if (guide.lines) {
@@ -239,44 +247,47 @@ export async function handleLiveClassMessage(
     }
 
     case "adhoc": {
-      if (guide.fly && context.canvas) {
-        const flies = Array.isArray(guide.fly) ? guide.fly : [guide.fly];
-        for (const fly of flies) {
-          if (
-            fly.actionType === "MAGNIFY" ||
-            (typeof fly.id === "string" && fly.id.startsWith("magnifier:"))
-          ) {
-            let target = fly.obj;
-            if (!target && fly.content) {
-              try {
-                target = typeof fly.content === "string" ? JSON.parse(fly.content) : fly.content;
-              } catch { }
-            }
+      if (guide.fly) {
+        context.onAdHoc?.(guide.fly);
+        if (context.canvas) {
+          const flies = Array.isArray(guide.fly) ? guide.fly : [guide.fly];
+          for (const fly of flies) {
             if (
-              target &&
-              typeof target === "object" &&
-              (target.left != null || target.width != null)
+              fly.actionType === "MAGNIFY" ||
+              (typeof fly.id === "string" && fly.id.startsWith("magnifier:"))
             ) {
-              await context.canvas.magnifyArea?.(target, { isMobile });
-              await sleep(600);
-            } else if (fly.objId || fly.id) {
-              context.canvas.magnifyObj?.(fly.objId || fly.id);
-              await sleep(600);
+              let target = fly.obj;
+              if (!target && fly.content) {
+                try {
+                  target = typeof fly.content === "string" ? JSON.parse(fly.content) : fly.content;
+                } catch { }
+              }
+              if (
+                target &&
+                typeof target === "object" &&
+                (target.left != null || target.width != null)
+              ) {
+                await context.canvas.magnifyArea?.(target, { isMobile });
+                await sleep(600);
+              } else if (fly.objId || fly.id) {
+                context.canvas.magnifyObj?.(fly.objId || fly.id);
+                await sleep(600);
+              }
+            } else {
+              context.canvas.removeObjectWithId?.(fly.id);
             }
-          } else {
-            context.canvas.removeObjectWithId?.(fly.id);
           }
-        }
-        for (const fly of flies) {
-          if (
-            fly.actionType !== "MAGNIFY" &&
-            !(typeof fly.id === "string" && fly.id.startsWith("magnifier:"))
-          ) {
-            context.canvas.importObjectFromClipboard?.({
-              ...fly,
-              support: isMobile ? "qoolla-mobile" : "qoolla",
-            });
-            await sleep(isMobile ? 800 : 720);
+          for (const fly of flies) {
+            if (
+              fly.actionType !== "MAGNIFY" &&
+              !(typeof fly.id === "string" && fly.id.startsWith("magnifier:"))
+            ) {
+              context.canvas.importObjectFromClipboard?.({
+                ...fly,
+                support: isMobile ? "qoolla-mobile" : "qoolla",
+              });
+              await sleep(isMobile ? 800 : 720);
+            }
           }
         }
       }
@@ -285,6 +296,7 @@ export async function handleLiveClassMessage(
 
     case "remove_all_adhoc": {
       context.canvas?.removeFlyingObjs?.();
+      context.onRemoveAllAdHoc?.();
       break;
     }
 
