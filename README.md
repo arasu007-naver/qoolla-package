@@ -25,6 +25,19 @@ setPrepMembers(scriptData.prepMembers);
 setSyncMembers(scriptData.syncMembers);
 setBackgroundCut(scriptData.backgroundCut);
 setCurtains(scriptData.curtains);
+①-1 스크립트가 준비되지 않은 유닛 대체 (createFallbackRawScript / createFallbackGuideScript, v1.4.0)
+releaseScriptUrl 이 없거나 요청이 실패해도 실황수업이 끊기지 않도록, 유닛 이미지를 actionType=BACKGROUND 로 깐 컷 1개와 빈 메타 블록(PREPS/SYNCS/GROUPS 등은 [], ACT_SUBS/ANIMATIONS 등은 {})으로 된 스크립트를 만듭니다. 메타 값으로 null 은 쓰지 않습니다(캔버스에서 .filter 호출 시 에러).
+
+typescript
+import { createFallbackRawScript, createFallbackGuideScript, scriptMaker } from "@qoolla/script-parser";
+// tutor-web: 기본 release 스크립트로 업로드할 raw 배열
+const rawCuts = createFallbackRawScript({ image: currentScript.unitImage });
+// app: 메모리에서 바로 쓸 GuideScript
+const cuts = createFallbackGuideScript({ image: currentScript.unitImage });
+// 또는 기존 다운로드 함수에 fallback 지정 — URL 누락/요청 실패/빈 스크립트면 기본 스크립트 반환
+const script = await scriptMaker(currentScript.releaseScriptUrl, undefined, { fallbackImage: currentScript.unitImage });
+// fetchAndParseReleaseScript(url, fetchFn, { fallbackImage }) 도 동일
+parseDocument 는 이제 PREPS/SYNCS/GROUPS 가 null 로 저장돼 있어도 [] 로, ACT_SUBS/ANIMATIONS/FADEOUTS/APPENDIX 는 {} 로 정규화합니다.
 ② 실시간 라이브 메시지 수신 및 자동 분기 처리 (handleLiveClassMessage)
 TopicLiveClassView나 hotlineClassViewerView의 GraphQL Subscription onData에서 수신된 메시지를 데스크탑/모바일 환경에 맞춰 한 줄로 디스패치합니다.
 

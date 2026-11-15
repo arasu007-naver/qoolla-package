@@ -27,6 +27,91 @@ export function safeJsonParse<T = any>(value: unknown, fallback: T): T {
   }
 }
 
+/** 배열이 아니면(null, "null" 파싱 결과 등) 빈 배열로, null/undefined 항목은 제거. */
+function asArray(value: unknown): unknown[] {
+  return Array.isArray(value) ? value.filter((it) => it !== null && it !== undefined) : [];
+}
+
+/** 일반 객체가 아니면(null, 배열 등) 빈 객체로. */
+function asRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+/**
+ * 스크립트 메타 블록 actionType 과 비어 있을 때의 기본값.
+ * 순서는 tutor-web 이 release 스크립트를 저장할 때의 순서를 따른다.
+ */
+export const SCRIPT_META_DEFAULTS: ReadonlyArray<readonly [string, () => unknown]> = [
+  ["ACT_SUBS", () => ({})],
+  ["BACKGROUND_SUBS", () => []],
+  ["ANIMATIONS", () => ({})],
+  ["APPENDIX", () => ({})],
+  ["PREPS", () => []],
+  ["GROUPS", () => []],
+  ["SYNCS", () => []],
+  ["FADEOUTS", () => ({})],
+  ["MEMO_SUBS", () => []],
+];
+
+export interface FallbackScriptUnit {
+  /** 배경으로 깔 유닛(문제/개념 등) 이미지 URL */
+  image: string;
+  /** 메타 블록 timestamp (기본값: Date.now()) */
+  timestamp?: number;
+}
+
+/**
+ * 스크립트가 준비되지 않은 유닛용 기본 raw 스크립트를 만든다.
+ * - actionType=BACKGROUND 컷 1개 (content: {"image": url}, timestamp 0)
+ * - 모든 메타 블록(PREPS, SYNCS, GROUPS ...)은 빈 값 ([] / {}) — null 은 캔버스에서
+ *   `.filter` 등을 호출하다 터지므로 쓰지 않는다.
+ * 그대로 releaseScriptUrl 로 업로드할 수 있는 형태다.
+ */
+export function createFallbackRawScript(unit: FallbackScriptUnit): RawCut[] {
+  if (!unit || typeof unit.image !== "string" || unit.image.trim() === "") {
+    throw new Error("createFallbackRawScript: unit.image 가 필요합니다.");
+  }
+  const ts = unit.timestamp ?? Date.now();
+  const cuts: RawCut[] = [
+    {
+      timestamp: 0,
+      actionType: "BACKGROUND",
+      content: JSON.stringify({ image: unit.image }),
+    },
+  ];
+  for (const [actionType, empty] of SCRIPT_META_DEFAULTS) {
+    cuts.push({ timestamp: ts, actionType, content: JSON.stringify(empty()) });
+  }
+  return cuts;
+}
+
+/**
+ * 스크립트가 준비되지 않은 유닛을 바로 실황수업에 쓸 수 있도록 파싱된 GuideScript 로 만든다.
+ * (createFallbackRawScript → parseDocument)
+ */
+export function createFallbackGuideScript(unit: FallbackScriptUnit): GuideScript {
+  return parseDocument(createFallbackRawScript(unit));
+}
+
+export interface ReleaseScriptFallbackOptions {
+  /**
+   * URL 이 비었거나 요청/파싱이 실패하면 이 이미지를 배경으로 한 기본 스크립트를 반환한다.
+   * 지정하지 않으면 기존처럼 에러를 던진다.
+   */
+  fallbackImage?: string | null;
+}
+
+function fallbackOrThrow(error: unknown, options?: ReleaseScriptFallbackOptions): GuideScript {
+  const image = options?.fallbackImage;
+  if (typeof image === "string" && image.trim() !== "") {
+    console.warn("스크립트를 불러오지 못해 기본(BACKGROUND) 스크립트로 대체합니다:", error);
+    return createFallbackGuideScript({ image });
+  }
+  throw error;
+}
+
 /**
  * Cut 유효성 검사 규칙 (topic-portrait-live 표준):
  * - actionType 이 "ADD" 인 경우 obj.id 또는 content 내의 id 가 존재하고 빈 문자열이나 "undefined" 가 아니어야 유효함.
@@ -324,7 +409,7 @@ export function parseDocument(rawList: RawCut[] | unknown[]): GuideScript {
         guideScript.backgroundCut = msg;
       }
     } else if (actionType === "ACT_SUBS" || actionType === "SCENE_SUBS") {
-      guideScript.actSubs = safeJsonParse(item.content, {});
+      guideScript.actSubs = asRecord(safeJsonParse(item.content, {}));
     } else if (actionType === "BACKGROUND_SUBS") {
       const parsed = safeJsonParse<unknown[]>(item.content, []);
       rawBksSubs = Array.isArray(parsed)
@@ -332,17 +417,17 @@ export function parseDocument(rawList: RawCut[] | unknown[]): GuideScript {
         : [];
       guideScript.backgroundSubs = rawBksSubs;
     } else if (actionType === "ANIMATIONS") {
-      guideScript.animations = safeJsonParse(item.content, {});
+      guideScript.animations = asRecord(safeJsonParse(item.content, {}));
     } else if (actionType === "FADEOUTS") {
-      guideScript.fadeOuts = safeJsonParse(item.content, {});
+      guideScript.fadeOuts = asRecord(safeJsonParse(item.content, {}));
     } else if (actionType === "APPENDIX") {
-      guideScript.appendix = safeJsonParse(item.content, {});
+      guideScript.appendix = asRecord(safeJsonParse(item.content, {}));
     } else if (actionType === "GROUPS") {
-      guideScript.groups = safeJsonParse(item.content, []);
+      guideScript.groups = asArray(safeJsonParse(item.content, []));
     } else if (actionType === "SYNCS") {
-      guideScript.syncMembers = safeJsonParse(item.content, []);
+      guideScript.syncMembers = asArray(safeJsonParse(item.content, []));
     } else if (actionType === "PREPS") {
-      guideScript.prepMembers = safeJsonParse(item.content, []);
+      guideScript.prepMembers = asArray(safeJsonParse(item.content, []));
     }
   }
 
@@ -373,62 +458,95 @@ export function parseDocument(rawList: RawCut[] | unknown[]): GuideScript {
   return guideScript;
 }
 
-/**
- * 원격 releaseScriptUrl 또는 scriptUrl 을 가져와 표준 GuideScript 로 파싱하는 공용 함수.
- * 캐시 방지를 위해 `ts` 타임스탬프 쿼리를 자동 부착합니다.
- */
-export async function fetchAndParseReleaseScript(
-  releaseScriptUrl: string,
-  fetchFn?: (url: string) => Promise<unknown>,
-): Promise<GuideScript> {
-  if (!releaseScriptUrl || typeof releaseScriptUrl !== "string") {
-    throw new Error("유효하지 않은 releaseScriptUrl 입니다.");
-  }
-  const separator = releaseScriptUrl.includes("?") ? "&" : "?";
-  const urlWithTs = `${releaseScriptUrl}${separator}ts=${Date.now()}`;
+/** URL 이 비었거나 템플릿 문자열로 "undefined"/"null" 이 들어간 경우. */
+function isMissingUrl(url: unknown): boolean {
+  if (typeof url !== "string" || url.trim() === "") return true;
+  return /^(undefined|null)(\?|$)/.test(url.trim());
+}
 
-  let data: unknown;
-  if (fetchFn) {
-    data = await fetchFn(urlWithTs);
-  } else if (typeof fetch === "function") {
-    const res = await fetch(urlWithTs);
-    if (!res.ok) {
-      throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
-    }
-    data = await res.json();
-  } else {
-    throw new Error("fetch 함수가 제공되지 않았습니다.");
-  }
-
-  return parseDocument(data as RawCut[]);
+/** 파싱은 됐지만 실행할 컷이 하나도 없는 스크립트 (빈 배열 등). */
+function isEmptyScript(script: GuideScript): boolean {
+  return script.contents.length === 0;
 }
 
 /**
- * 하위 호환용 scriptMaker (axios/fetch 기반)
+ * 원격 releaseScriptUrl 또는 scriptUrl 을 가져와 표준 GuideScript 로 파싱하는 공용 함수.
+ * 캐시 방지를 위해 `ts` 타임스탬프 쿼리를 자동 부착합니다.
+ * options.fallbackImage 를 주면 URL 누락/요청 실패/빈 스크립트일 때 기본 스크립트를 반환합니다.
  */
-export async function scriptMaker(
-  scriptUrl: string,
-  customGetter?: (url: string) => Promise<{ data: RawCut[] }>,
+export async function fetchAndParseReleaseScript(
+  releaseScriptUrl: string | null | undefined,
+  fetchFn?: (url: string) => Promise<unknown>,
+  options?: ReleaseScriptFallbackOptions,
 ): Promise<GuideScript> {
   try {
-    if (customGetter) {
-      const response = await customGetter(scriptUrl);
-      return parseDocument(response.data);
+    if (isMissingUrl(releaseScriptUrl)) {
+      throw new Error("유효하지 않은 releaseScriptUrl 입니다.");
     }
-    const separator = scriptUrl.includes("?") ? "&" : "?";
-    const urlWithTs = `${scriptUrl}${separator}ts=${Date.now()}`;
-    if (typeof fetch === "function") {
+    const url = releaseScriptUrl as string;
+    const separator = url.includes("?") ? "&" : "?";
+    const urlWithTs = `${url}${separator}ts=${Date.now()}`;
+
+    let data: unknown;
+    if (fetchFn) {
+      data = await fetchFn(urlWithTs);
+    } else if (typeof fetch === "function") {
       const res = await fetch(urlWithTs);
       if (!res.ok) {
         throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
       }
-      const data = await res.json();
-      return parseDocument(data);
+      data = await res.json();
+    } else {
+      throw new Error("fetch 함수가 제공되지 않았습니다.");
     }
-    throw new Error("스크립트 요청 환경이 지원되지 않습니다.");
+
+    const parsed = parseDocument(data as RawCut[]);
+    if (options?.fallbackImage && isEmptyScript(parsed)) {
+      return fallbackOrThrow(new Error("스크립트에 컷이 없습니다."), options);
+    }
+    return parsed;
   } catch (error) {
-    console.error("JSON 스크립트 파일을 가져오거나 파싱하는 중 오류가 발생했습니다:", error);
-    throw error;
+    return fallbackOrThrow(error, options);
+  }
+}
+
+/**
+ * 하위 호환용 scriptMaker (axios/fetch 기반)
+ * options.fallbackImage 를 주면 URL 누락/요청 실패/빈 스크립트일 때 기본 스크립트를 반환합니다.
+ */
+export async function scriptMaker(
+  scriptUrl: string | null | undefined,
+  customGetter?: (url: string) => Promise<{ data: RawCut[] }>,
+  options?: ReleaseScriptFallbackOptions,
+): Promise<GuideScript> {
+  try {
+    if (isMissingUrl(scriptUrl)) {
+      throw new Error("유효하지 않은 scriptUrl 입니다.");
+    }
+    const url = scriptUrl as string;
+    let parsed: GuideScript;
+    if (customGetter) {
+      const response = await customGetter(url);
+      parsed = parseDocument(response.data);
+    } else if (typeof fetch === "function") {
+      const separator = url.includes("?") ? "&" : "?";
+      const res = await fetch(`${url}${separator}ts=${Date.now()}`);
+      if (!res.ok) {
+        throw new Error(`HTTP Error ${res.status}: ${res.statusText}`);
+      }
+      parsed = parseDocument(await res.json());
+    } else {
+      throw new Error("스크립트 요청 환경이 지원되지 않습니다.");
+    }
+    if (options?.fallbackImage && isEmptyScript(parsed)) {
+      return fallbackOrThrow(new Error("스크립트에 컷이 없습니다."), options);
+    }
+    return parsed;
+  } catch (error) {
+    if (!options?.fallbackImage) {
+      console.error("JSON 스크립트 파일을 가져오거나 파싱하는 중 오류가 발생했습니다:", error);
+    }
+    return fallbackOrThrow(error, options);
   }
 }
 
@@ -436,8 +554,9 @@ export async function scriptMaker(
  * 하위 호환용 liveClassScriptMaker
  */
 export async function liveClassScriptMaker(
-  releaseScriptUrl: string,
+  releaseScriptUrl: string | null | undefined,
   customGetter?: (url: string) => Promise<{ data: RawCut[] }>,
+  options?: ReleaseScriptFallbackOptions,
 ): Promise<GuideScript | null> {
-  return scriptMaker(releaseScriptUrl, customGetter);
+  return scriptMaker(releaseScriptUrl, customGetter, options);
 }
