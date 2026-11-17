@@ -99,7 +99,7 @@
 
 ## 빌드·테스트
 - **build**: `build.js` — `npm run build`, tsc로 CJS(.js/.d.ts) 및 ESM(.mjs) 생성
-- **tsconfig**: `tsconfig.json` — 컴파일 설정(src/**/* → dist)
+- **tsconfig**: `tsconfig.json` — 컴파일 설정(src 대상)
 - **package.json**: `package.json` — 패키지 메타, scripts
 
 테스트: 이 저장소에는 테스트 파일/테스트 스크립트가 없습니다.
