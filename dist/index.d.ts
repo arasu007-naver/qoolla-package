@@ -50,7 +50,7 @@ export declare function isValidCut(cutOrAction: RawCut | unknown): boolean;
 export declare function parseRawDocument(jsonDoc: RawCut[] | unknown[]): RawGuideScript;
 /**
  * 런타임/플레이어용 고수준 파서 (GuideScript 반환).
- * ADD / MODIFY / CLEAN_SCENE / CLEAN / POPUP / MEMO / BACKGROUND / MAGNIFY 를 정제하여 contents 로 구성.
+ * ADD / MODIFY / CLEAN_SCENE / CLEAN / CLEAR / POPUP / MEMO / BACKGROUND / MAGNIFY 를 정제하여 contents 로 구성.
  */
 export declare function parseDocument(rawList: RawCut[] | unknown[]): GuideScript;
 /**

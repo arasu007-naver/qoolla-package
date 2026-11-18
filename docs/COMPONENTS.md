@@ -38,6 +38,8 @@
 - **ScriptPlayerCallbacks**: `src/player.ts` — 플레이어 콜백 인터페이스
 - **defaultSleep**: `src/player.ts` — `defaultSleep(ms): Promise<void>`
 - **getLeaderIdForCut**: `src/player.ts` — `getLeaderIdForCut(cut): string|null`
+- **RESET_ACTION_TYPES**: `src/player.ts` — 리셋 컷 actionType 상수 `["CLEAN","CLEAN_SCENE","CLEAR"]`
+- **isResetCut**: `src/player.ts` — `isResetCut(cut): boolean`
 - **findNearestCleanBefore**: `src/player.ts` — `findNearestCleanBefore(cuts, targetIdx): number`
 - **fastforward**: `src/player.ts` — 컷을 빠르게 앞으로 감기
 - **forwardToPoint**: `src/player.ts` — fastforward 별칭

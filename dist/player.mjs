@@ -22,8 +22,15 @@ export function getLeaderIdForCut(cut) {
     }
     return null;
 }
+/** 리셋 컷(배경 유지 객체를 뺀 모든 객체 제거)의 actionType 목록 */
+export const RESET_ACTION_TYPES = ["CLEAN", "CLEAN_SCENE", "CLEAR"];
+/** 컷이 리셋 컷(CLEAN / CLEAN_SCENE / CLEAR)인지 판정합니다. */
+export function isResetCut(cut) {
+    const at = String(cut?.actionType ?? "").toUpperCase();
+    return RESET_ACTION_TYPES.includes(at);
+}
 /**
- * targetIdx 직전의 가장 최근 CLEAN, CLEAN_SCENE 또는 BACKGROUND 액션 인덱스를 찾습니다.
+ * targetIdx 직전의 가장 최근 CLEAN, CLEAN_SCENE, CLEAR 또는 BACKGROUND 액션 인덱스를 찾습니다.
  */
 export function findNearestCleanBefore(cuts, targetIdx) {
     if (!cuts || !Array.isArray(cuts) || cuts.length === 0)
@@ -32,14 +39,14 @@ export function findNearestCleanBefore(cuts, targetIdx) {
     for (let i = maxIdx; i >= 0; i--) {
         const cut = cuts[i];
         const at = String(cut?.actionType ?? "").toUpperCase();
-        if (at === "CLEAN" || at === "CLEAN_SCENE" || at === "BACKGROUND") {
+        if (isResetCut(cut) || at === "BACKGROUND") {
             return i;
         }
     }
     return 0;
 }
 /**
- * 최근/이전의 actionType='BACKGROUND' 또는 'CLEAN'/'CLEAN_SCENE'부터 목표 targetGuide의 studyIdx, step까지 빠르게 실행합니다.
+ * 최근/이전의 actionType='BACKGROUND' 또는 'CLEAN'/'CLEAN_SCENE'/'CLEAR'부터 목표 targetGuide의 studyIdx, step까지 빠르게 실행합니다.
  * 돋보기(MAGNIFY) 효과 플레이 시 각 진입 지점에서 await sleep(600)을 적용합니다.
  * (기준: topic-portrait-live/PageClient.tsx)
  */
@@ -65,7 +72,7 @@ export async function fastforward(cutContents, targetGuide, callbacks) {
         if (!cut)
             continue;
         const actionType = String(cut.actionType ?? "").toUpperCase();
-        if (actionType === "CLEAN" || actionType === "CLEAN_SCENE" || actionType === "BACKGROUND") {
+        if (isResetCut(cut) || actionType === "BACKGROUND") {
             await callbacks.runCut(cut, { idx, step: "main" });
             continue;
         }
@@ -160,7 +167,7 @@ export async function playToPoint(cutContents, targetGuide, lastGuide, callbacks
         if (!cut)
             continue;
         const actionType = String(cut.actionType ?? "").toUpperCase();
-        if (actionType === "CLEAN" || actionType === "CLEAN_SCENE" || actionType === "BACKGROUND") {
+        if (isResetCut(cut) || actionType === "BACKGROUND") {
             await callbacks.runCut(cut, { idx, step: "main" });
             continue;
         }

@@ -8,6 +8,7 @@ import type {
   GuideScript,
 } from "./types";
 
+import { isResetCut } from "./player";
 export type * from "./types";
 export * from "./player";
 export * from "./message-handler";
@@ -287,7 +288,7 @@ export function parseRawDocument(jsonDoc: RawCut[] | unknown[]): RawGuideScript 
         seq: i,
         ts: cut.timestamp,
       });
-    } else if (actionType === "CLEAN" || actionType === "CLEAN_SCENE") {
+    } else if (actionType === "CLEAN" || actionType === "CLEAN_SCENE" || actionType === "CLEAR") {
       guideScript.scenes.push(i);
       guideScript.rawStory.push({
         actionType: cut.actionType,
@@ -348,7 +349,7 @@ export function parseRawDocument(jsonDoc: RawCut[] | unknown[]): RawGuideScript 
       stackedBack.push(cut.objId);
     }
     const actType = String(cut.actionType ?? "").toUpperCase();
-    if (actType === "CLEAN" || actType === "CLEAN_SCENE") {
+    if (actType === "CLEAN" || actType === "CLEAN_SCENE" || actType === "CLEAR") {
       guideScript.persitence.push({ seq: cut.seq, objs: [...stackedBack] });
     }
   }
@@ -358,7 +359,7 @@ export function parseRawDocument(jsonDoc: RawCut[] | unknown[]): RawGuideScript 
 
 /**
  * 런타임/플레이어용 고수준 파서 (GuideScript 반환).
- * ADD / MODIFY / CLEAN_SCENE / CLEAN / POPUP / MEMO / BACKGROUND / MAGNIFY 를 정제하여 contents 로 구성.
+ * ADD / MODIFY / CLEAN_SCENE / CLEAN / CLEAR / POPUP / MEMO / BACKGROUND / MAGNIFY 를 정제하여 contents 로 구성.
  */
 export function parseDocument(rawList: RawCut[] | unknown[]): GuideScript {
   const guideScript: GuideScript = {
@@ -392,6 +393,7 @@ export function parseDocument(rawList: RawCut[] | unknown[]): GuideScript {
       actionType === "MODIFY" ||
       actionType === "CLEAN_SCENE" ||
       actionType === "CLEAN" ||
+      actionType === "CLEAR" ||
       actionType === "POPUP" ||
       actionType === "MEMO" ||
       actionType === "BACKGROUND" ||
@@ -446,7 +448,7 @@ export function parseDocument(rawList: RawCut[] | unknown[]): GuideScript {
     }
 
     const actType = String(item.actionType ?? "").toUpperCase();
-    if (actType === "CLEAN" || actType === "CLEAN_SCENE") {
+    if (isResetCut(item)) {
       persistenceStufs.push({ seq: i, objs: [...stackedBack] });
       guideScript.refreshPoints.push(i);
     }

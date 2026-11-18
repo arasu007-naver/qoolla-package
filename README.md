@@ -111,6 +111,7 @@ await playToPoint(
 );
 // 2. 특정 시점부터의 고속 되감기/재생 (fastforward)
 await fastforward(studySequences, targetGuide, callbacks);
+// findNearestCleanBefore 가 CLEAN / CLEAN_SCENE / CLEAR / BACKGROUND 중 가장 가까운 컷부터 재생합니다.
 ④ 스텝 단위 진행 및 특정 위치 실행 (runNext / runAt)
 강사 화면 또는 학생 뷰어에서 prologue → main → epilogue 상태 머신에 따라 다음 스텝을 진행합니다.
 

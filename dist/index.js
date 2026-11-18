@@ -24,6 +24,7 @@ exports.parseDocument = parseDocument;
 exports.fetchAndParseReleaseScript = fetchAndParseReleaseScript;
 exports.scriptMaker = scriptMaker;
 exports.liveClassScriptMaker = liveClassScriptMaker;
+const player_1 = require("./player");
 __exportStar(require("./player"), exports);
 __exportStar(require("./message-handler"), exports);
 __exportStar(require("./subjects"), exports);
@@ -291,7 +292,7 @@ function parseRawDocument(jsonDoc) {
                 ts: cut.timestamp,
             });
         }
-        else if (actionType === "CLEAN" || actionType === "CLEAN_SCENE") {
+        else if (actionType === "CLEAN" || actionType === "CLEAN_SCENE" || actionType === "CLEAR") {
             guideScript.scenes.push(i);
             guideScript.rawStory.push({
                 actionType: cut.actionType,
@@ -349,7 +350,7 @@ function parseRawDocument(jsonDoc) {
             stackedBack.push(cut.objId);
         }
         const actType = String(cut.actionType ?? "").toUpperCase();
-        if (actType === "CLEAN" || actType === "CLEAN_SCENE") {
+        if (actType === "CLEAN" || actType === "CLEAN_SCENE" || actType === "CLEAR") {
             guideScript.persitence.push({ seq: cut.seq, objs: [...stackedBack] });
         }
     }
@@ -357,7 +358,7 @@ function parseRawDocument(jsonDoc) {
 }
 /**
  * 런타임/플레이어용 고수준 파서 (GuideScript 반환).
- * ADD / MODIFY / CLEAN_SCENE / CLEAN / POPUP / MEMO / BACKGROUND / MAGNIFY 를 정제하여 contents 로 구성.
+ * ADD / MODIFY / CLEAN_SCENE / CLEAN / CLEAR / POPUP / MEMO / BACKGROUND / MAGNIFY 를 정제하여 contents 로 구성.
  */
 function parseDocument(rawList) {
     const guideScript = {
@@ -387,6 +388,7 @@ function parseDocument(rawList) {
             actionType === "MODIFY" ||
             actionType === "CLEAN_SCENE" ||
             actionType === "CLEAN" ||
+            actionType === "CLEAR" ||
             actionType === "POPUP" ||
             actionType === "MEMO" ||
             actionType === "BACKGROUND" ||
@@ -444,7 +446,7 @@ function parseDocument(rawList) {
             stackedBack.push(objId);
         }
         const actType = String(item.actionType ?? "").toUpperCase();
-        if (actType === "CLEAN" || actType === "CLEAN_SCENE") {
+        if ((0, player_1.isResetCut)(item)) {
             persistenceStufs.push({ seq: i, objs: [...stackedBack] });
             guideScript.refreshPoints.push(i);
         }

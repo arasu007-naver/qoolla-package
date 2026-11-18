@@ -51,12 +51,16 @@ export declare function defaultSleep(ms: number): Promise<void>;
  * 컷 객체로부터 리더 오브젝트 ID(leaderId)를 추출합니다.
  */
 export declare function getLeaderIdForCut(cut: unknown): string | null;
+/** 리셋 컷(배경 유지 객체를 뺀 모든 객체 제거)의 actionType 목록 */
+export declare const RESET_ACTION_TYPES: readonly ["CLEAN", "CLEAN_SCENE", "CLEAR"];
+/** 컷이 리셋 컷(CLEAN / CLEAN_SCENE / CLEAR)인지 판정합니다. */
+export declare function isResetCut(cut: unknown): boolean;
 /**
- * targetIdx 직전의 가장 최근 CLEAN, CLEAN_SCENE 또는 BACKGROUND 액션 인덱스를 찾습니다.
+ * targetIdx 직전의 가장 최근 CLEAN, CLEAN_SCENE, CLEAR 또는 BACKGROUND 액션 인덱스를 찾습니다.
  */
 export declare function findNearestCleanBefore(cuts: unknown[], targetIdx: number): number;
 /**
- * 최근/이전의 actionType='BACKGROUND' 또는 'CLEAN'/'CLEAN_SCENE'부터 목표 targetGuide의 studyIdx, step까지 빠르게 실행합니다.
+ * 최근/이전의 actionType='BACKGROUND' 또는 'CLEAN'/'CLEAN_SCENE'/'CLEAR'부터 목표 targetGuide의 studyIdx, step까지 빠르게 실행합니다.
  * 돋보기(MAGNIFY) 효과 플레이 시 각 진입 지점에서 await sleep(600)을 적용합니다.
  * (기준: topic-portrait-live/PageClient.tsx)
  */
