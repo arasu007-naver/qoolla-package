@@ -89,6 +89,9 @@ export function findNearestCleanBefore(cuts: unknown[], targetIdx: number): numb
   return 0;
 }
 
+/** 진입 재생(fastforward)에서 칠판을 바꾸는 콜백 사이에 두는 간격(ms) */
+export const CATCH_UP_GAP_MS = 180;
+
 /**
  * 최근/이전의 actionType='BACKGROUND' 또는 'CLEAN'/'CLEAN_SCENE'/'CLEAR'부터 목표 targetGuide의 studyIdx, step까지 빠르게 실행합니다.
  * 돋보기(MAGNIFY) 효과 플레이 시 각 진입 지점에서 await sleep(600)을 적용합니다.
@@ -116,6 +119,7 @@ export async function fastforward<T = RawCut>(
 
   if (callbacks.runCurtains) {
     await callbacks.runCurtains(startIdx);
+    await sleep(CATCH_UP_GAP_MS);
   }
 
   for (let idx = startIdx; idx <= endIdx; idx++) {
@@ -126,12 +130,14 @@ export async function fastforward<T = RawCut>(
 
     if (isResetCut(cut) || actionType === "BACKGROUND") {
       await callbacks.runCut(cut, { idx, step: "main" });
+      await sleep(CATCH_UP_GAP_MS);
       continue;
     }
 
     if (actionType === "MAGNIFY") {
       await callbacks.runCut(cut, { idx, step: "main" });
       await sleep(600);
+      await sleep(CATCH_UP_GAP_MS);
       continue;
     }
 
@@ -151,14 +157,17 @@ export async function fastforward<T = RawCut>(
         if (hasP && callbacks.runPrologue) {
           await callbacks.runPrologue(cut, leaderId, { idx });
           await sleep(480);
+          await sleep(CATCH_UP_GAP_MS);
         }
       } else if (step === "main") {
         await callbacks.runCut(cut, { idx, step: "main" });
         await sleep(420);
+        await sleep(CATCH_UP_GAP_MS);
       } else if (step === "epilogue") {
         if (hasE && callbacks.runEpilogue) {
           await callbacks.runEpilogue(cut, leaderId, { idx });
           await sleep(480);
+          await sleep(CATCH_UP_GAP_MS);
         }
       }
     }
@@ -167,6 +176,7 @@ export async function fastforward<T = RawCut>(
       const stepsToRun = STEP_ORDER.slice(0, limit + 1) as CutStep[];
       await callbacks.runMagnifier({ idx, steps: stepsToRun });
       await sleep(600);
+      await sleep(CATCH_UP_GAP_MS);
     }
   }
 

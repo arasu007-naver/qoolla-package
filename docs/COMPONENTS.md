@@ -41,7 +41,8 @@
 - **RESET_ACTION_TYPES**: `src/player.ts` — 리셋 컷 actionType 상수 `["CLEAN","CLEAN_SCENE","CLEAR"]`
 - **isResetCut**: `src/player.ts` — `isResetCut(cut): boolean`
 - **findNearestCleanBefore**: `src/player.ts` — `findNearestCleanBefore(cuts, targetIdx): number`
-- **fastforward**: `src/player.ts` — 컷을 빠르게 앞으로 감기
+- **fastforward**: `src/player.ts` — 컷을 빠르게 앞으로 감기 (칠판을 바꾸는 콜백 사이마다 180ms 간격)
+- **CATCH_UP_GAP_MS**: `src/player.ts` — 진입 재생 컷·step 사이 간격 상수 `180`
 - **forwardToPoint**: `src/player.ts` — fastforward 별칭
 - **playToPoint**: `src/player.ts` — 지정 지점까지 재생
 - **runNext**: `src/player.ts` — 다음 컷 실행

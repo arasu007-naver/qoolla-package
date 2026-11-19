@@ -59,6 +59,8 @@ export declare function isResetCut(cut: unknown): boolean;
  * targetIdx 직전의 가장 최근 CLEAN, CLEAN_SCENE, CLEAR 또는 BACKGROUND 액션 인덱스를 찾습니다.
  */
 export declare function findNearestCleanBefore(cuts: unknown[], targetIdx: number): number;
+/** 진입 재생(fastforward)에서 칠판을 바꾸는 콜백 사이에 두는 간격(ms) */
+export declare const CATCH_UP_GAP_MS = 180;
 /**
  * 최근/이전의 actionType='BACKGROUND' 또는 'CLEAN'/'CLEAN_SCENE'/'CLEAR'부터 목표 targetGuide의 studyIdx, step까지 빠르게 실행합니다.
  * 돋보기(MAGNIFY) 효과 플레이 시 각 진입 지점에서 await sleep(600)을 적용합니다.
